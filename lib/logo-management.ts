@@ -53,31 +53,20 @@ export async function getAllLogos() {
   try {
     console.log("🔍 Fetching all logos from database")
 
-    // First check if table exists
-    const { data: tableCheck, error: tableCheckError } = await supabase
-      .from("information_schema.tables")
-      .select("exists")
-      .eq("table_name", "logo_library")
-      .limit(1)
-
-    if (tableCheckError) {
-      console.error("❌ Error checking if table exists:", tableCheckError)
-      return []
-    }
-
-    if (!tableCheck || tableCheck.length === 0 || !tableCheck[0]?.exists) {
-      console.log("⚠️ logo_library table does not exist")
-      return []
-    }
-
     const { data, error } = await supabase
       .from("logo_library")
       .select("*")
       .eq("is_active", true)
-      .order(["type", "display_name"])
+      .order("type", { ascending: true })
+      .order("display_name", { ascending: true })
 
     if (error) {
       console.error("❌ Error fetching all logos:", error)
+      // If table doesn't exist, return empty array
+      if (error.code === "PGRST116" || error.message.includes("does not exist")) {
+        console.log("⚠️ logo_library table does not exist")
+        return []
+      }
       throw error
     }
 
@@ -90,7 +79,7 @@ export async function getAllLogos() {
     return data as Logo[]
   } catch (error) {
     console.error("❌ Error fetching all logos:", error)
-    throw error
+    return []
   }
 }
 
@@ -189,14 +178,7 @@ export async function findLogoByName(name: string, type?: string) {
   try {
     console.log(`🔍 Simple logo lookup: "${name}", type: ${type || "any"}`)
 
-    const normalizedName = name.toLowerCase().trim()
-
-    let query = supabase
-      .from("logo_library")
-      .select("*")
-      .eq("is_active", true)
-      .eq("display_name", normalizedName)
-      .limit(1)
+    let query = supabase.from("logo_library").select("*").eq("is_active", true).ilike("display_name", name).limit(1)
 
     if (type) {
       query = query.eq("type", type)
@@ -286,15 +268,8 @@ export async function getLogoStats() {
   try {
     console.log("📊 Fetching logo statistics")
 
-    const { data, error } = await supabase
-      .from("logo_library")
-      .select(`
-        type,
-        total:count(*),
-        active:count(CASE WHEN is_active THEN 1 END)
-      `)
-      .group("type")
-      .order("type")
+    // Get all logos and calculate stats in JavaScript since Supabase aggregation is complex
+    const { data, error } = await supabase.from("logo_library").select("type, is_active")
 
     if (error) {
       console.error("❌ Error fetching logo stats:", error)
@@ -303,9 +278,12 @@ export async function getLogoStats() {
 
     const stats = data.reduce(
       (acc, row) => {
-        acc[row.type] = {
-          total: Number(row.total),
-          active: Number(row.active),
+        if (!acc[row.type]) {
+          acc[row.type] = { total: 0, active: 0 }
+        }
+        acc[row.type].total++
+        if (row.is_active) {
+          acc[row.type].active++
         }
         return acc
       },
