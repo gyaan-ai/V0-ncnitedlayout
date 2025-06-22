@@ -50,7 +50,7 @@ const FEMALE_WEIGHT_CLASSES = [
 
 const COLLEGE_WEIGHTS = ["125", "133", "141", "149", "157", "165", "174", "184", "197", "285"]
 const GRADUATION_YEARS = [2025, 2026, 2027, 2028, 2029, 2030]
-const NC_UNITED_TEAMS = ["Blue", "Gold", "Red", "White", "Black"]
+const NC_UNITED_TEAMS = ["", "Blue", "Gold", "Red", "White", "Black"]
 const DIVISIONS = ["NCAA Division I", "NCAA Division II", "NCAA Division III", "NAIA", "NJCAA"]
 const INTEREST_LEVELS = ["High", "Medium", "Low", "Committed"]
 const GRADES = [
@@ -665,18 +665,20 @@ export default function ProfileManagement() {
                             Video
                           </Badge>
                         )}
-                        <Badge
-                          variant="outline"
-                          className={`${
-                            athlete.nc_united_team === "Blue"
-                              ? "border-blue-500 text-blue-700"
-                              : athlete.nc_united_team === "Gold"
-                                ? "border-yellow-500 text-yellow-700"
-                                : "border-gray-500 text-gray-700"
-                          }`}
-                        >
-                          NC United {athlete.nc_united_team}
-                        </Badge>
+                        {athlete.nc_united_team && (
+                          <Badge
+                            variant="outline"
+                            className={`${
+                              athlete.nc_united_team === "Blue"
+                                ? "border-blue-500 text-blue-700"
+                                : athlete.nc_united_team === "Gold"
+                                  ? "border-yellow-500 text-yellow-700"
+                                  : "border-gray-500 text-gray-700"
+                            }`}
+                          >
+                            NC United {athlete.nc_united_team}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <div className="text-gray-600 space-y-1">
@@ -836,15 +838,6 @@ export default function ProfileManagement() {
                             src={
                               editForm.profile_image_url ||
                               "/placeholder.svg?height=150&width=150&query=athlete+headshot" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
-                              "/placeholder.svg" ||
                               "/placeholder.svg"
                             }
                             alt="Preview"
@@ -1040,18 +1033,19 @@ export default function ProfileManagement() {
                     <div>
                       <Label>NC United Team</Label>
                       <Select
-                        value={editForm.nc_united_team || "Blue"}
-                        onValueChange={(value) => updateForm("nc_united_team", value)}
+                        value={editForm.nc_united_team || ""}
+                        onValueChange={(value) => updateForm("nc_united_team", value === "None" ? null : value)}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue placeholder="Select team" />
                         </SelectTrigger>
                         <SelectContent>
-                          {NC_UNITED_TEAMS.map((team) => (
-                            <SelectItem key={team} value={team}>
-                              {team}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="Blue">Blue</SelectItem>
+                          <SelectItem value="Gold">Gold</SelectItem>
+                          <SelectItem value="Red">Red</SelectItem>
+                          <SelectItem value="White">White</SelectItem>
+                          <SelectItem value="Black">Black</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
